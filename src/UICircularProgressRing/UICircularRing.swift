@@ -122,6 +122,10 @@ import UIKit
         didSet { ringLayer.setNeedsDisplay() }
     }
 
+    open var startKnobStyle: UICircularRingValueKnobStyle? {
+        didSet { ringLayer.setNeedsDisplay() }
+    }
+
     /**
      The start angle for the entire progress ring view.
      

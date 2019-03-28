@@ -48,6 +48,7 @@ class UICircularRingLayer: CAShapeLayer {
 
     /// the style for the value knob
     var valueKnobStyle: UICircularRingValueKnobStyle?
+    var startKnobStyle: UICircularRingValueKnobStyle?
 
     // MARK: Animation members
 
@@ -87,6 +88,7 @@ class UICircularRingLayer: CAShapeLayer {
         guard let layer = layer as? UICircularRingLayer else { fatalError("unable to copy layer") }
         valueFormatter = layer.valueFormatter
         valueKnobStyle = layer.valueKnobStyle
+        startKnobStyle = layer.startKnobStyle
         animationDuration = layer.animationDuration
         animationTimingFunction = layer.animationTimingFunction
         animated = layer.animated
@@ -163,7 +165,7 @@ class UICircularRingLayer: CAShapeLayer {
         guard ring.outerRingWidth > 0 else { return }
         let center: CGPoint = CGPoint(x: bounds.midX, y: bounds.midY)
 
-        let knobSize = ring.valueKnobStyle?.size ?? 0
+        let valueKnobSize = ring.valueKnobStyle?.size ?? 0
         let borderWidth: CGFloat
         if case let UICircularRingStyle.bordered(width, _) = ring.style {
             borderWidth = width
@@ -172,7 +174,7 @@ class UICircularRingLayer: CAShapeLayer {
         }
 
         let offSet = max(ring.outerRingWidth, ring.innerRingWidth) / 2
-                        + (knobSize / 4)
+                        + (valueKnobSize / 4)
                         + (borderWidth * 2)
         let outerRadius: CGFloat = min(bounds.width, bounds.height) / 2 - offSet
         let start: CGFloat = ring.fullCircle ? 0 : ring.startAngle.rads
@@ -217,6 +219,11 @@ class UICircularRingLayer: CAShapeLayer {
         ctx.setStrokeColor(ring.innerRingColor.cgColor)
         ctx.addPath(innerPath.cgPath)
         ctx.drawPath(using: .stroke)
+        if let knobStyle = ring.startKnobStyle, value > minValue {
+            let knobOffset = knobStyle.size / 2
+            drawKnob(knobStyle: knobStyle, in: ctx, origin: CGPoint(x: innerPath.firstPoint.x - knobOffset,
+                                                                    y: innerPath.firstPoint.y - knobOffset))
+        }
 
         if let gradientOptions = ring.gradientOptions {
             // Create gradient and draw it
@@ -248,8 +255,8 @@ class UICircularRingLayer: CAShapeLayer {
 
         if let knobStyle = ring.valueKnobStyle, value > minValue {
             let knobOffset = knobStyle.size / 2
-            drawValueKnob(in: ctx, origin: CGPoint(x: innerPath.currentPoint.x - knobOffset,
-                                                   y: innerPath.currentPoint.y - knobOffset))
+            drawKnob(knobStyle: knobStyle, in: ctx, origin: CGPoint(x: innerPath.currentPoint.x - knobOffset,
+                                                                    y: innerPath.currentPoint.y - knobOffset))
         }
     }
 
@@ -356,9 +363,7 @@ class UICircularRingLayer: CAShapeLayer {
     /**
      Draws the value knob inside the provided context
      */
-    private func drawValueKnob(in context: CGContext, origin: CGPoint) {
-        guard let knobStyle = ring.valueKnobStyle else { return }
-
+    private func drawKnob(knobStyle: UICircularRingValueKnobStyle, in context: CGContext, origin: CGPoint) {
         context.saveGState()
 
         let rect = CGRect(origin: origin, size: CGSize(width: knobStyle.size, height: knobStyle.size))
